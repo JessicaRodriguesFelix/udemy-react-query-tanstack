@@ -38,7 +38,7 @@ export function getAvailableAppointments(
 ): AppointmentDateMap {
   // clone so as not to mutate argument directly
   const filteredAppointments = { ...appointments };
-
+  console.log("filteredAppointments", filteredAppointments);
   // only keep appointments that are open (or taken by the logged-in user) and are not in the past)
   Object.keys(filteredAppointments).forEach((date) => {
     const dateNum = Number(date);

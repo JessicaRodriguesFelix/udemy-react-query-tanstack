@@ -1,5 +1,6 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import { AppointmentDateMap } from "../types";
 import { getAvailableAppointments } from "../utils";
@@ -50,18 +51,42 @@ export function useAppointments() {
   //   appointments that the logged-in user has reserved (in white)
   const { userId } = useLoginData();
 
+  const selectFn = useCallback((data: AppointmentDateMap, showAll: boolean) => {
+    if (showAll) return data;
+    return getAvailableAppointments(data, userId);
+  },[userId]);
+
   /** ****************** END 2: filter appointments  ******************** */
   /** ****************** START 3: useQuery  ***************************** */
   // useQuery call for appointments for the current monthYear
 
-  // TODO: update with useQuery!
+  //prefetch next minth when monthYear changes
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const nextMonthYear = getNewMonthYear(monthYear, 1);
+    queryClient.prefetchQuery({
+      queryKey: [
+        queryKeys.appointments,
+        nextMonthYear.year,
+        nextMonthYear.month,
+      ],
+      queryFn: () => getAppointments(nextMonthYear.year, nextMonthYear.month),
+    });
+  }, [queryClient, monthYear]);
+
   // Notes:
   //    1. appointments is an AppointmentDateMap (object with days of month
   //       as properties, and arrays of appointments for that day as values)
   //
   //    2. The getAppointments query function needs monthYear.year and
   //       monthYear.month
-  const appointments: AppointmentDateMap = {};
+  const fallback: AppointmentDateMap = {};
+
+  const { data: appointments = fallback } = useQuery({
+    queryKey: [queryKeys.appointments, monthYear.year, monthYear.month],
+    queryFn: () => getAppointments(monthYear.year, monthYear.month),
+    select: (data) => selectFn(data, showAll),
+  });
 
   /** ****************** END 3: useQuery  ******************************* */
 
