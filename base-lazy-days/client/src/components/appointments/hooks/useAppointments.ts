@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AppointmentDateMap } from "../types";
 import { getAvailableAppointments } from "../utils";
@@ -18,6 +18,11 @@ async function getAppointments(
   const { data } = await axiosInstance.get(`/appointments/${year}/${month}`);
   return data;
 }
+
+const commonOptions = {
+  staleTime: 0,
+  gcTime: 30000, // sets to the default value out of the box (because we defined a global one)
+};
 
 // The purpose of this hook:
 //   1. track the current month/year (aka monthYear) selected by the user
@@ -51,10 +56,13 @@ export function useAppointments() {
   //   appointments that the logged-in user has reserved (in white)
   const { userId } = useLoginData();
 
-  const selectFn = useCallback((data: AppointmentDateMap, showAll: boolean) => {
-    if (showAll) return data;
-    return getAvailableAppointments(data, userId);
-  },[userId]);
+  const selectFn = useCallback(
+    (data: AppointmentDateMap, showAll: boolean) => {
+      if (showAll) return data;
+      return getAvailableAppointments(data, userId);
+    },
+    [userId]
+  );
 
   /** ****************** END 2: filter appointments  ******************** */
   /** ****************** START 3: useQuery  ***************************** */
@@ -71,6 +79,7 @@ export function useAppointments() {
         nextMonthYear.month,
       ],
       queryFn: () => getAppointments(nextMonthYear.year, nextMonthYear.month),
+      ...commonOptions,
     });
   }, [queryClient, monthYear]);
 
@@ -86,6 +95,9 @@ export function useAppointments() {
     queryKey: [queryKeys.appointments, monthYear.year, monthYear.month],
     queryFn: () => getAppointments(monthYear.year, monthYear.month),
     select: (data) => selectFn(data, showAll),
+    refetchOnWindowFocus: true,
+    refetchInterval: 60000, //every second; not recommended for production
+    ...commonOptions,
   });
 
   /** ****************** END 3: useQuery  ******************************* */
