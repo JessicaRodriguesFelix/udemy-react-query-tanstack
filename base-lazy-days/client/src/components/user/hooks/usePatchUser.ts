@@ -32,7 +32,7 @@ async function patchUserOnServer(
 }
 
 export function usePatchUser() {
-  const { user, updateUser } = useUser();
+  const { user } = useUser();
   const queryClient = useQueryClient();
 
   const { mutate: patchUser } = useMutation({
