@@ -36,7 +36,7 @@ export function usePatchUser() {
   const queryClient = useQueryClient();
 
   const { mutate: patchUser } = useMutation({
-    mutationKey: [MUTATION_KEY],
+    // mutationKey: [MUTATION_KEY],
     mutationFn: (newData: User) => patchUserOnServer(newData, user),
     onSuccess: () => {
       toast({ title: "user updated!", status: "success" });
